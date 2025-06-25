@@ -149,7 +149,7 @@ void Iniciar_jogo(Pergunta *perguntas, int num_perguntas) {
 }
 
 // funcao para atualizar 
-void Atualizar_jogo(GameScreen *currentScreen) {
+void Atualizar_jogo(GameScreen *tela_atual) {
     // para ver qual tecla o jogador fez 
     if (IsKeyPressed(KEY_A)) resposta_jogador = 'A';
     if (IsKeyPressed(KEY_B)) resposta_jogador = 'B';
@@ -182,20 +182,20 @@ void Atualizar_jogo(GameScreen *currentScreen) {
                 pergunta_atual = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[pergunta_atual_idx], perguntas_usadas_indices);
                 if (pergunta_atual == NULL) {
                     printf("Erro: Não foi possível carregar a próxima pergunta.\n");
-                    *currentScreen = END; //caso de erro, ele vai para a tela final
+                    *tela_atual = END; //caso de erro, ele vai para a tela final
                 }
                 resposta_jogador = ' ';
                 resposta_enviada = false;
                 resposta_certa = false;
             } else {
-                *currentScreen = END; // quando todas as perguntas ja foram respondidas
+                *tela_atual = END; // quando todas as perguntas ja foram respondidas
                 // fim do jogo
             }
         } else {
             // else para ver a resposta incorreta
             // se tiver incorreta fim do jogo
             pontuacao_atual = pontuacao_garantida; // salva a pontuação garantida 
-            *currentScreen = END;
+            *tela_atual = END;
         }
     }
 }
@@ -208,11 +208,11 @@ void Escrever_jogo() {
     if (pergunta_atual != NULL) {
         //usado para definir area do enunciado
         Rectangle enunciadoRec = { 100, 100, SCREEN_WIDTH - 200, 200 }; // x = largura //  altura = y
-        int fontSize = 25;
-        int spacing = 2; // a separação entre as linhas
+        int tamanho_fonte = 25;
+        int espacamento = 2; // a separação entre as linhas
 
         // escrever o enunciado 
-        Escrever_texto(GetFontDefault(), pergunta_atual->enunciado, enunciadoRec, fontSize, spacing, BLACK);
+        Escrever_texto(GetFontDefault(), pergunta_atual->enunciado, enunciadoRec, tamanho_fonte, espacamento, BLACK);
 
     
         // calcular a posição da altura no enunciado
@@ -243,6 +243,11 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Jogo do Milhão");
     SetTargetFPS(60);
 
+    // Carregar texturas das imagens de fundo
+    Texture2D teladefundo_menu = LoadTexture("teladefundo_menu.png");
+    Texture2D teladefundo_gameplay = LoadTexture("teladefundo_gameplay.png");
+    Texture2D teladefundo_end = LoadTexture("teladefundo_end.png");
+
     carregar_perguntas_csv("bancoperguntas.csv", &todas_perguntas, &total_perguntas, &capacidade_perguntas);
 
     GameScreen tela_atual = MENU;
@@ -251,12 +256,16 @@ int main() {
         switch (tela_atual) {
             case MENU: {
                 BeginDrawing();
+
+                DrawTexture(teladefundo_menu, 0, 0, WHITE); // Desenha a imagem de fundo do menu
+                // ClearBackground(RAYWHITE); // Removido para usar a imagem de fundo
+
                 ClearBackground(RAYWHITE);
-                DrawText("JOGO DO MILHÃO", SCREEN_WIDTH/2 - MeasureText("JOGO DO MILHÃO", 60)/2, 200, 60, BLACK);
+                DrawText("JOGO DO MILHÃO", SCREEN_WIDTH/2 - MeasureText("JOGO DO MILHÃO", 60)/2, 130, 60, YELLOW);
                 
                 // botão para iniciar o jogo
                 Rectangle botao_start = { SCREEN_WIDTH/2 - 150, 400, 300, 70 };
-                DrawRectangleRec(botao_start, LIGHTGRAY);
+                DrawRectangleRec(botao_start, YELLOW);
                 DrawText("Iniciar Jogo", botao_start.x + 50, botao_start.y + 20, 30, BLACK);
                 if (CheckCollisionPointRec(GetMousePosition(), botao_start) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                     if (total_perguntas < 15) {
@@ -270,7 +279,7 @@ int main() {
 
                 // o botão de sair do jogo
                 Rectangle botao_saida = { SCREEN_WIDTH/2 - 150, 500, 300, 70 };
-                DrawRectangleRec(botao_saida, LIGHTGRAY);
+                DrawRectangleRec(botao_saida, YELLOW);
                 DrawText("Sair", botao_saida.x + 110, botao_saida.y + 20, 30, BLACK);
                 if (CheckCollisionPointRec(GetMousePosition(), botao_saida) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                     CloseWindow();
@@ -278,20 +287,30 @@ int main() {
 
                 EndDrawing();
             } break;
+
             case GAMEPLAY: {
                 Atualizar_jogo(&tela_atual);
                 BeginDrawing();
+
+                DrawTexture(teladefundo_gameplay, 0, 0, WHITE); // Desenha a imagem de fundo do gameplay
+                // ClearBackground(RAYWHITE); // Removido para usar a imagem de fundo
+
                 Escrever_jogo();
                 EndDrawing();
             } break;
+
             case END: {
                 BeginDrawing();
+
+                DrawTexture(teladefundo_end, 0, 0, WHITE); // Desenha a imagem de fundo do fim de jogo
+                // ClearBackground(RAYWHITE); // Removido para usar a imagem de fundo
+
                 ClearBackground(RAYWHITE);
-                DrawText("FIM DE JOGO!", SCREEN_WIDTH/2 - MeasureText("FIM DE JOGO!", 60)/2, 200, 60, BLACK);
-                DrawText(TextFormat("Sua Premiação final: R$ %d", pontuacao_atual), SCREEN_WIDTH/2 - MeasureText(TextFormat("Sua pontuação final: R$ %d", pontuacao_atual), 30)/2, 300, 30, BLACK);
+                DrawText("FIM DE JOGO!", SCREEN_WIDTH/2 - MeasureText("FIM DE JOGO!", 60)/2, 200, 60, RED);
+                DrawText(TextFormat("Sua Premiação final: R$ %d", pontuacao_atual), SCREEN_WIDTH/2 - MeasureText(TextFormat("Sua pontuação final: R$ %d", pontuacao_atual), 30)/2, 300, 30, RED);
                 
                 //botao de voltar para o menu inicial
-                Rectangle botao_voltar_menu = { SCREEN_WIDTH/2 - 150, 400, 300, 70 };
+                Rectangle botao_voltar_menu = { SCREEN_WIDTH/2 - 150, 900, 300, 70 };
                 DrawRectangleRec(botao_voltar_menu, LIGHTGRAY);
                 DrawText("Voltar ao Menu", botao_voltar_menu.x + 30, botao_voltar_menu.y + 20, 30, BLACK);
                 if (CheckCollisionPointRec(GetMousePosition(), botao_voltar_menu) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -303,6 +322,11 @@ int main() {
             default: break;
         }
     }
+
+    // Descarregar texturas ao fechar a janela
+    UnloadTexture(teladefundo_menu);
+    UnloadTexture(teladefundo_gameplay);
+    UnloadTexture(teladefundo_end);
 
     free(todas_perguntas);
     if (perguntas_usadas_indices != NULL) {
