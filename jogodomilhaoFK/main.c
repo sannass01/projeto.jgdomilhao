@@ -7,8 +7,8 @@
 #include "pergunta.h"
 #include "csv_handler.h"
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 450
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
 
 // Estados do jogo
 typedef enum GameScreen {
@@ -65,6 +65,7 @@ int total_perguntas = 0;
 int capacidade_perguntas = 0;
 
 int pontuacao_atual = 0;
+int pontuacao_garantida = 0; // Nova variável para pontuação garantida
 int pergunta_atual_idx = 0;
 int perguntas_respondidas_count = 0;
 int *perguntas_usadas_indices = NULL;
@@ -78,10 +79,46 @@ const char *dificuldades_jogo[] = {
 };
 int valores_perguntas[] = {1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 1000000};
 
-Pergunta *current_question = NULL;
-char player_answer = ' ';
-bool answer_submitted = false;
-bool correct_answer = false;
+Pergunta *pergunta_atual = NULL;
+char resposta_jogador = ' ';
+bool resposta_enviada = false;
+bool resposta_certa = false;
+
+// Função para desenhar texto com quebra de linha
+void DrawTextWrapped(Font font, const char *texto, Rectangle rec, float fontSize, float spacing, Color tint)
+{
+    int tamanho = TextLength(texto);
+    float textoOffsetY = 0;
+    int comeco_linha = 0;
+    int fim_linha = -1;
+
+    for (int i = 0; i < tamanho; i++)
+    {
+        if ((texto[i] == ' ') || (texto[i] == '\t') || (texto[i] == '\n'))
+        {
+            fim_linha = i;
+        }
+
+        Vector2 textSize = MeasureTextEx(font, TextSubtext(texto, comeco_linha, (fim_linha - comeco_linha)), fontSize, spacing);
+
+        if (((textSize.x + rec.x) >= (rec.x + rec.width)) && (fim_linha != -1))
+        {
+            DrawTextEx(font, TextSubtext(texto, comeco_linha, (fim_linha - comeco_linha)), (Vector2){ rec.x, rec.y + textoOffsetY }, fontSize, spacing, tint);
+            textoOffsetY += (fontSize + spacing);
+            comeco_linha = fim_linha + 1;
+            fim_linha = -1;
+        }
+        else if (texto[i] == '\n')
+        {
+            DrawTextEx(font, TextSubtext(texto, comeco_linha, (i - comeco_linha)), (Vector2){ rec.x, rec.y + textoOffsetY }, fontSize, spacing, tint);
+            textoOffsetY += (fontSize + spacing);
+            comeco_linha = i + 1;
+            fim_linha = -1;
+        }
+    }
+
+    DrawTextEx(font, TextSubtext(texto, comeco_linha, (tamanho - comeco_linha)), (Vector2){ rec.x, rec.y + textoOffsetY }, fontSize, spacing, tint);
+}
 
 // Função para inicializar o jogo
 void InitGame(Pergunta *perguntas, int num_perguntas) {
@@ -89,10 +126,11 @@ void InitGame(Pergunta *perguntas, int num_perguntas) {
     total_perguntas = num_perguntas;
     perguntas_respondidas_count = 0;
     pontuacao_atual = 0;
+    pontuacao_garantida = 0; // Resetar pontuação garantida
     pergunta_atual_idx = 0;
-    player_answer = ' ';
-    answer_submitted = false;
-    correct_answer = false;
+    resposta_jogador = ' ';
+    resposta_enviada = false;
+    resposta_certa = false;
 
     if (perguntas_usadas_indices != NULL) {
         free(perguntas_usadas_indices);
@@ -100,8 +138,8 @@ void InitGame(Pergunta *perguntas, int num_perguntas) {
     perguntas_usadas_indices = (int *)calloc(total_perguntas, sizeof(int));
 
     // Obter a primeira pergunta
-    current_question = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[pergunta_atual_idx], perguntas_usadas_indices);
-    if (current_question == NULL) {
+    pergunta_atual = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[pergunta_atual_idx], perguntas_usadas_indices);
+    if (pergunta_atual == NULL) {
         // Tratar erro: não há perguntas suficientes ou para a dificuldade
         printf("Erro: Não foi possível iniciar o jogo. Verifique o banco de perguntas.\n");
     }
@@ -109,66 +147,90 @@ void InitGame(Pergunta *perguntas, int num_perguntas) {
 
 // Função para atualizar o jogo
 void UpdateGame(GameScreen *currentScreen) {
-    if (IsKeyPressed(KEY_A)) player_answer = 'A';
-    if (IsKeyPressed(KEY_B)) player_answer = 'B';
-    if (IsKeyPressed(KEY_C)) player_answer = 'C';
-    if (IsKeyPressed(KEY_D)) player_answer = 'D';
+    if (IsKeyPressed(KEY_A)) resposta_jogador = 'A';
+    if (IsKeyPressed(KEY_B)) resposta_jogador = 'B';
+    if (IsKeyPressed(KEY_C)) resposta_jogador = 'C';
+    if (IsKeyPressed(KEY_D)) resposta_jogador = 'D';
 
-    if (player_answer != ' ' && !answer_submitted) {
-        answer_submitted = true;
-        if (player_answer == current_question->letra_correta) {
-            correct_answer = true;
+    if (resposta_jogador != ' ' && !resposta_enviada) {
+        resposta_enviada = true;
+        if (resposta_jogador == pergunta_atual->letra_correta) {
+            resposta_certa = true;
             pontuacao_atual = valores_perguntas[pergunta_atual_idx];
+
+            // Marcos de segurança
+            if (pergunta_atual_idx == 4) { // Pergunta 5 (índice 4)
+                pontuacao_garantida = valores_perguntas[4];
+            } else if (pergunta_atual_idx == 9) { // Pergunta 10 (índice 9)
+                pontuacao_garantida = valores_perguntas[9];
+            }
+
         } else {
-            correct_answer = false;
+            resposta_certa = false;
         }
     }
 
-    if (answer_submitted && IsKeyPressed(KEY_ENTER)) {
-        if (correct_answer) {
+    if (resposta_enviada && IsKeyPressed(KEY_ENTER)) {
+        if (resposta_certa) {
             pergunta_atual_idx++;
             if (pergunta_atual_idx < 15) {
-                current_question = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[pergunta_atual_idx], perguntas_usadas_indices);
-                if (current_question == NULL) {
+                pergunta_atual = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[pergunta_atual_idx], perguntas_usadas_indices);
+                if (pergunta_atual == NULL) {
                     // Tratar erro: não há perguntas suficientes ou para a dificuldade
                     printf("Erro: Não foi possível carregar a próxima pergunta.\n");
                     *currentScreen = END; // Ir para tela final em caso de erro
                 }
-                player_answer = ' ';
-                answer_submitted = false;
-                correct_answer = false;
+                resposta_jogador = ' ';
+                resposta_enviada = false;
+                resposta_certa = false;
             } else {
                 *currentScreen = END; // Fim do jogo, todas as perguntas respondidas
             }
         } else {
-            *currentScreen = END; // Resposta incorreta, fim do jogo
+            // Resposta incorreta, fim do jogo
+            pontuacao_atual = pontuacao_garantida; // Atribui a pontuação garantida
+            *currentScreen = END;
         }
     }
 }
 
 // Função para desenhar o jogo
 void DrawGame() {
+    
     ClearBackground(RAYWHITE);
 
-    if (current_question != NULL) {
-        DrawText(current_question->enunciado, 50, 50, 20, BLACK);
+    if (pergunta_atual != NULL) {
+        // Definir a área para o enunciado da pergunta
+        Rectangle enunciadoRec = { 100, 100, SCREEN_WIDTH - 200, 200 }; // x, y, largura, altura
+        int fontSize = 25;
+        int spacing = 2; // Espaçamento entre linhas
+
+        // Desenhar o enunciado com quebra de linha
+        DrawTextWrapped(GetFontDefault(), pergunta_atual->enunciado, enunciadoRec, fontSize, spacing, BLACK);
+
+        // Calcular a altura do texto do enunciado para posicionar as alternativas
+        // Uma estimativa pode ser feita, ou um valor fixo que seja suficiente.
+        // Para simplificar, vamos usar um Y inicial fixo para as alternativas que seja seguro.
+        int alternativasStartY = enunciadoRec.y + enunciadoRec.height + 20; // Começa abaixo da área do enunciado + um espaçamento
+
         for (int i = 0; i < NUM_ALTERNATIVAS; i++) {
-            DrawText(TextFormat("%c: %s", (char)('A' + i), current_question->alternativas[i]), 50, 100 + i * 30, 20, BLACK);
+            DrawText(TextFormat("%c: %s", (char)('A' + i), pergunta_atual->alternativas[i]), 100, alternativasStartY + i * 50, 25, BLACK);
         }
 
-        if (answer_submitted) {
-            if (correct_answer) {
-                DrawText("CORRETO! Pressione ENTER para continuar.", 50, 300, 20, GREEN);
+        if (resposta_enviada) {
+            if (resposta_certa) {
+                DrawText("CORRETO! Pressione ENTER para continuar.", 100, alternativasStartY + NUM_ALTERNATIVAS * 50 + 20, 25, GREEN);
             } else {
-                DrawText(TextFormat("INCORRETO! A resposta correta era %c. Pressione ENTER para continuar.", current_question->letra_correta), 50, 300, 20, RED);
+                DrawText(TextFormat("INCORRETO! A resposta correta era %c. Pressione ENTER para continuar.", pergunta_atual->letra_correta), 100, alternativasStartY + NUM_ALTERNATIVAS * 50 + 20, 25, RED);
             }
         }
     } else {
-        DrawText("Carregando perguntas...", 50, 50, 20, BLACK);
+        DrawText("Carregando perguntas...", SCREEN_WIDTH/2 - MeasureText("Carregando perguntas...", 25)/2, SCREEN_HEIGHT/2, 25, BLACK);
     }
 
-    DrawText(TextFormat("Pontuação: R$ %d", pontuacao_atual), 50, SCREEN_HEIGHT - 50, 20, DARKGRAY);
-    DrawText(TextFormat("Pergunta %d de 15", pergunta_atual_idx + 1), SCREEN_WIDTH - 200, SCREEN_HEIGHT - 50, 20, DARKGRAY);
+    DrawText(TextFormat("Premiação: R$ %d", pontuacao_atual), 100, SCREEN_HEIGHT - 100, 25, DARKGRAY);
+    DrawText(TextFormat("Pontuação Garantida: R$ %d", pontuacao_garantida), 100, SCREEN_HEIGHT - 70, 25, DARKGREEN);
+    DrawText(TextFormat("Pergunta %d de 15", pergunta_atual_idx + 1), SCREEN_WIDTH - 300, SCREEN_HEIGHT - 100, 25, DARKGRAY);
 }
 
 int main() {
@@ -177,41 +239,41 @@ int main() {
 
     carregar_perguntas_csv("bancoperguntas.csv", &todas_perguntas, &total_perguntas, &capacidade_perguntas);
 
-    GameScreen currentScreen = MENU;
+    GameScreen tela_atual = MENU;
 
     while (!WindowShouldClose()) {
-        switch (currentScreen) {
+        switch (tela_atual) {
             case MENU: {
                 BeginDrawing();
                 ClearBackground(RAYWHITE);
-                DrawText("JOGO DO MILHÃO", SCREEN_WIDTH/2 - MeasureText("JOGO DO MILHÃO", 40)/2, 100, 40, BLACK);
+                DrawText("JOGO DO MILHÃO", SCREEN_WIDTH/2 - MeasureText("JOGO DO MILHÃO", 60)/2, 200, 60, BLACK);
                 
                 // Botão Iniciar Jogo
-                Rectangle startButton = { SCREEN_WIDTH/2 - 100, 200, 200, 50 };
-                DrawRectangleRec(startButton, LIGHTGRAY);
-                DrawText("Iniciar Jogo", startButton.x + 20, startButton.y + 15, 20, BLACK);
-                if (CheckCollisionPointRec(GetMousePosition(), startButton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                Rectangle botao_start = { SCREEN_WIDTH/2 - 150, 400, 300, 70 };
+                DrawRectangleRec(botao_start, LIGHTGRAY);
+                DrawText("Iniciar Jogo", botao_start.x + 50, botao_start.y + 20, 30, BLACK);
+                if (CheckCollisionPointRec(GetMousePosition(), botao_start) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                     if (total_perguntas < 15) {
                         printf("Não há perguntas suficientes para iniciar o jogo. São necessárias 15 perguntas.\n");
                         // Poderíamos exibir uma mensagem na tela também
                     } else {
                         InitGame(todas_perguntas, total_perguntas);
-                        currentScreen = GAMEPLAY;
+                        tela_atual = GAMEPLAY;
                     }
                 }
 
                 // Botão Sair
-                Rectangle exitButton = { SCREEN_WIDTH/2 - 100, 270, 200, 50 };
-                DrawRectangleRec(exitButton, LIGHTGRAY);
-                DrawText("Sair", exitButton.x + 80, exitButton.y + 15, 20, BLACK);
-                if (CheckCollisionPointRec(GetMousePosition(), exitButton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                Rectangle botao_saida = { SCREEN_WIDTH/2 - 150, 500, 300, 70 };
+                DrawRectangleRec(botao_saida, LIGHTGRAY);
+                DrawText("Sair", botao_saida.x + 110, botao_saida.y + 20, 30, BLACK);
+                if (CheckCollisionPointRec(GetMousePosition(), botao_saida) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                     CloseWindow();
                 }
 
                 EndDrawing();
             } break;
             case GAMEPLAY: {
-                UpdateGame(&currentScreen);
+                UpdateGame(&tela_atual);
                 BeginDrawing();
                 DrawGame();
                 EndDrawing();
@@ -219,15 +281,15 @@ int main() {
             case END: {
                 BeginDrawing();
                 ClearBackground(RAYWHITE);
-                DrawText("FIM DE JOGO!", SCREEN_WIDTH/2 - MeasureText("FIM DE JOGO!", 40)/2, 100, 40, BLACK);
-                DrawText(TextFormat("Sua pontuação final: R$ %d", pontuacao_atual), SCREEN_WIDTH/2 - MeasureText(TextFormat("Sua pontuação final: R$ %d", pontuacao_atual), 20)/2, 200, 20, BLACK);
+                DrawText("FIM DE JOGO!", SCREEN_WIDTH/2 - MeasureText("FIM DE JOGO!", 60)/2, 200, 60, BLACK);
+                DrawText(TextFormat("Sua Premiação final: R$ %d", pontuacao_atual), SCREEN_WIDTH/2 - MeasureText(TextFormat("Sua pontuação final: R$ %d", pontuacao_atual), 30)/2, 300, 30, BLACK);
                 
                 // Botão Voltar ao Menu
-                Rectangle backToMenuButton = { SCREEN_WIDTH/2 - 100, 300, 200, 50 };
-                DrawRectangleRec(backToMenuButton, LIGHTGRAY);
-                DrawText("Voltar ao Menu", backToMenuButton.x + 10, backToMenuButton.y + 15, 20, BLACK);
-                if (CheckCollisionPointRec(GetMousePosition(), backToMenuButton) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                    currentScreen = MENU;
+                Rectangle botao_voltar_menu = { SCREEN_WIDTH/2 - 150, 400, 300, 70 };
+                DrawRectangleRec(botao_voltar_menu, LIGHTGRAY);
+                DrawText("Voltar ao Menu", botao_voltar_menu.x + 30, botao_voltar_menu.y + 20, 30, BLACK);
+                if (CheckCollisionPointRec(GetMousePosition(), botao_voltar_menu) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    tela_atual = MENU;
                 }
 
                 EndDrawing();
