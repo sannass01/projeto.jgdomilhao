@@ -1,18 +1,38 @@
-BINNAME_MAIN = MilhaoDosGames
+# Verifica o sistema operacional
+ifdef OS
+  OS := $(strip $(OS))
+else
+  OS := $(strip $(shell uname))
+endif
 
-SRC_MAIN = main.c csv_handler.c pergunta.c
+BINNAME = hello
 
-RAYLIB_FLAGS = -I"C:\raylib\raylib\src" -L"C:\raylib\raylib\src" -lraylib -lopengl32 -lgdi32 -lwinmm
+ifeq ($(OS),Windows_NT)
+	INCLUDE = -I./include/ -L./libwin
+	EXTRA_FLAGS = -Wall -Werror -Wextra -std=c99 -Wno-missing-braces -lraylib -lm -lopengl32 -lgdi32 -lwinmm
+	BIN = $(BINNAME).exe
+	RM = del /Q /F
+else
+	INCLUDE=-I./include/ -L./lib
+	EXTRA_FLAGS = -Wall -Werror -Wextra -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+	BIN =./$(BINNAME)
+	RM = rm -f
+endif
 
-all: $(BINNAME_MAIN)
+SRC=./*.c
 
-$(BINNAME_MAIN):
-	gcc $(SRC_MAIN) -o $(BINNAME_MAIN) $(RAYLIB_FLAGS)
-
-clean:
-	rm -f $(BINNAME_MAIN)
+all:
+	gcc $(SRC) -g -lm $(EXTRA_FLAGS) $(INCLUDE) -o $(BIN)
 
 run:
-	./$(BINNAME_MAIN)
+	$(BIN)
+
+debug:
+	gdb $(BIN)
+
+clean:
+	$(RM) $(BIN)
 
 
+valgrind:
+	valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-leak-kinds=all --show-reachable=yes ./$(BIN)

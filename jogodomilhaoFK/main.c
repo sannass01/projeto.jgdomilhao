@@ -59,18 +59,6 @@ Pergunta *obter_pergunta_por_dificuldade(Pergunta *perguntas, int num_perguntas,
     return &perguntas[indice_real];
 }
 
-
-Pergunta *todas_perguntas = NULL;
-int total_perguntas = 0;
-int capacidade_perguntas = 0;
-
-int pontuacao_atual = 0;
-int pontuacao_garantida = 0; 
-int pergunta_atual_idx = 0;
-int perguntas_respondidas_count = 0;
-int *perguntas_usadas_indices = NULL;
-
-
 // constante para as dificuldaddes dos jogos
 const char *dificuldades_jogo[] = {
     "muito fácil", "muito fácil",
@@ -80,12 +68,6 @@ const char *dificuldades_jogo[] = {
     "muito difícil", "muito difícil", "muito difícil"
 };
 int valores_perguntas[] = {1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 1000000};
-
-// passagem por parametro
-Pergunta *pergunta_atual = NULL;
-char resposta_jogador = ' ';
-bool resposta_enviada = false;
-bool resposta_certa = false;
 
 // funçao para escrever no jogo 
 void Escrever_texto(Font font, const char *texto, Rectangle rec, float fontSize, float spacing, Color tint)
@@ -124,69 +106,67 @@ void Escrever_texto(Font font, const char *texto, Rectangle rec, float fontSize,
 }
 
 // funcao para iniciar o jogo
-void Iniciar_jogo(Pergunta *perguntas, int num_perguntas) {
-    todas_perguntas = perguntas;
-    total_perguntas = num_perguntas;
-    perguntas_respondidas_count = 0;
-    pontuacao_atual = 0;
-    pontuacao_garantida = 0; // varial usada para resetar a pontuação
-    pergunta_atual_idx = 0;
-    resposta_jogador = ' ';
-    resposta_enviada = false;
-    resposta_certa = false;
+void Iniciar_jogo(Pergunta **todas_perguntas_ptr, int *total_perguntas_ptr, int *perguntas_respondidas_count_ptr, int *pontuacao_atual_ptr, int *pontuacao_garantida_ptr, int *pergunta_atual_idx_ptr, char *resposta_jogador_ptr, bool *resposta_enviada_ptr, bool *resposta_certa_ptr, Pergunta **pergunta_atual_ptr, int **perguntas_usadas_indices_ptr) {
+    *perguntas_respondidas_count_ptr = 0;
+    *pontuacao_atual_ptr = 0;
+    *pontuacao_garantida_ptr = 0; // varial usada para resetar a pontuação
+    *pergunta_atual_idx_ptr = 0;
+    *resposta_jogador_ptr = ' ';
+    *resposta_enviada_ptr = false;
+    *resposta_certa_ptr = false;
 
-    if (perguntas_usadas_indices != NULL) {
-        free(perguntas_usadas_indices);
+    if (*perguntas_usadas_indices_ptr != NULL) {
+        free(*perguntas_usadas_indices_ptr);
     }
-    perguntas_usadas_indices = (int *)calloc(total_perguntas, sizeof(int));
+    *perguntas_usadas_indices_ptr = (int *)calloc(*total_perguntas_ptr, sizeof(int));
 
     // obter a primeira pergunta
-    pergunta_atual = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[pergunta_atual_idx], perguntas_usadas_indices);
+    *pergunta_atual_ptr = obter_pergunta_por_dificuldade(*todas_perguntas_ptr, *total_perguntas_ptr, dificuldades_jogo[*pergunta_atual_idx_ptr], *perguntas_usadas_indices_ptr);
     // if para verificar se algo deu errrado 
-    if (pergunta_atual == NULL) {
+    if (*pergunta_atual_ptr == NULL) {
         printf("Erro: Não foi possível iniciar o jogo. Verifique o banco de perguntas.\n");
     }
 }
 
 // funcao para atualizar 
-void Atualizar_jogo(GameScreen *tela_atual) {
+void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *pergunta_atual_idx, int *pontuacao_atual, int *pontuacao_garantida, char *resposta_jogador, bool *resposta_enviada, bool *resposta_certa, Pergunta *todas_perguntas, int total_perguntas, int *perguntas_usadas_indices) {
     // para ver qual tecla o jogador fez 
-    if (IsKeyPressed(KEY_A)) resposta_jogador = 'A';
-    if (IsKeyPressed(KEY_B)) resposta_jogador = 'B';
-    if (IsKeyPressed(KEY_C)) resposta_jogador = 'C';
-    if (IsKeyPressed(KEY_D)) resposta_jogador = 'D';
+    if (IsKeyPressed(KEY_A)) *resposta_jogador = 'A';
+    if (IsKeyPressed(KEY_B)) *resposta_jogador = 'B';
+    if (IsKeyPressed(KEY_C)) *resposta_jogador = 'C';
+    if (IsKeyPressed(KEY_D)) *resposta_jogador = 'D';
 
     // verificar se a resposta do jogador é valida 
-    if (resposta_jogador != ' ' && !resposta_enviada) {
-        resposta_enviada = true;
-        if (resposta_jogador == pergunta_atual->letra_correta) {
-            resposta_certa = true;
-            pontuacao_atual = valores_perguntas[pergunta_atual_idx];
+    if (*resposta_jogador != ' ' && !*resposta_enviada) {
+        *resposta_enviada = true;
+        if (*resposta_jogador == (*pergunta_atual_ptr)->letra_correta) {
+            *resposta_certa = true;
+            *pontuacao_atual = valores_perguntas[*pergunta_atual_idx];
 
             // paramentros para a segurança do codigo
-            if (pergunta_atual_idx == 4) { // pergunta 5 (tamanho 4)
-                pontuacao_garantida = valores_perguntas[4];
-            } else if (pergunta_atual_idx == 9) { // pergunta  10 (tamanho  9)
-                pontuacao_garantida = valores_perguntas[9];
+            if (*pergunta_atual_idx == 4) { // pergunta 5 (tamanho 4)
+                *pontuacao_garantida = valores_perguntas[4];
+            } else if (*pergunta_atual_idx == 9) { // pergunta  10 (tamanho  9)
+                *pontuacao_garantida = valores_perguntas[9];
             }
 
         } else {
-            resposta_certa = false;
+            *resposta_certa = false;
         }
     }
 
-    if (resposta_enviada && IsKeyPressed(KEY_ENTER)) {
-        if (resposta_certa) {
-            pergunta_atual_idx++;
-            if (pergunta_atual_idx < 15) {
-                pergunta_atual = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[pergunta_atual_idx], perguntas_usadas_indices);
-                if (pergunta_atual == NULL) {
+    if (*resposta_enviada && IsKeyPressed(KEY_ENTER)) {
+        if (*resposta_certa) {
+            (*pergunta_atual_idx)++;
+            if (*pergunta_atual_idx < 15) {
+                *pergunta_atual_ptr = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[*pergunta_atual_idx], perguntas_usadas_indices);
+                if (*pergunta_atual_ptr == NULL) {
                     printf("Erro: Não foi possível carregar a próxima pergunta.\n");
                     *tela_atual = END; //caso de erro, ele vai para a tela final
                 }
-                resposta_jogador = ' ';
-                resposta_enviada = false;
-                resposta_certa = false;
+                *resposta_jogador = ' ';
+                *resposta_enviada = false;
+                *resposta_certa = false;
             } else {
                 *tela_atual = END; // quando todas as perguntas ja foram respondidas
                 // fim do jogo
@@ -194,14 +174,14 @@ void Atualizar_jogo(GameScreen *tela_atual) {
         } else {
             // else para ver a resposta incorreta
             // se tiver incorreta fim do jogo
-            pontuacao_atual = pontuacao_garantida; // salva a pontuação garantida 
+            *pontuacao_atual = *pontuacao_garantida; // salva a pontuação garantida 
             *tela_atual = END;
         }
     }
 }
 
 // essa funcao foi feita para escrever no jogo
-void Escrever_jogo() {
+void Escrever_jogo(Pergunta *pergunta_atual, int pontuacao_atual, int pontuacao_garantida, int pergunta_atual_idx, bool resposta_enviada, bool resposta_certa) {
     
     ClearBackground(RAYWHITE);
 
@@ -243,6 +223,21 @@ int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Jogo do Milhão");
     SetTargetFPS(60);
 
+    Pergunta *todas_perguntas = NULL;
+    int total_perguntas = 0;
+    int capacidade_perguntas = 0;
+
+    int pontuacao_atual = 0;
+    int pontuacao_garantida = 0; 
+    int pergunta_atual_idx = 0;
+    int perguntas_respondidas_count = 0;
+    int *perguntas_usadas_indices = NULL;
+
+    Pergunta *pergunta_atual = NULL;
+    char resposta_jogador = ' ';
+bool resposta_enviada = false;
+bool resposta_certa = false;
+
     // Carregar texturas das imagens de fundo
     Texture2D teladefundo_menu = LoadTexture("teladefundo_menu.png");
     Texture2D teladefundo_gameplay = LoadTexture("teladefundo_gameplay.png");
@@ -272,7 +267,7 @@ int main() {
                         printf("Não há perguntas suficientes para iniciar o jogo. São necessárias 15 perguntas.\n");
                        
                     } else {
-                        Iniciar_jogo(todas_perguntas, total_perguntas);
+                        Iniciar_jogo(&todas_perguntas, &total_perguntas, &perguntas_respondidas_count, &pontuacao_atual, &pontuacao_garantida, &pergunta_atual_idx, &resposta_jogador, &resposta_enviada, &resposta_certa, &pergunta_atual, &perguntas_usadas_indices);
                         tela_atual = GAMEPLAY;
                     }
                 }
@@ -289,13 +284,13 @@ int main() {
             } break;
 
             case GAMEPLAY: {
-                Atualizar_jogo(&tela_atual);
+                Atualizar_jogo(&tela_atual, &pergunta_atual, &pergunta_atual_idx, &pontuacao_atual, &pontuacao_garantida, &resposta_jogador, &resposta_enviada, &resposta_certa, todas_perguntas, total_perguntas, perguntas_usadas_indices);
                 BeginDrawing();
 
                 DrawTexture(teladefundo_gameplay, 0, 0, WHITE); // Desenha a imagem de fundo do gameplay
                 // ClearBackground(RAYWHITE); // Removido para usar a imagem de fundo
 
-                Escrever_jogo();
+                Escrever_jogo(pergunta_atual, pontuacao_atual, pontuacao_garantida, pergunta_atual_idx, resposta_enviada, resposta_certa);
                 EndDrawing();
             } break;
 
@@ -336,3 +331,5 @@ int main() {
 
     return 0;
 }
+
+
