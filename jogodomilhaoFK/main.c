@@ -47,6 +47,8 @@ Pergunta *obter_pergunta_por_dificuldade(Pergunta *perguntas, int num_perguntas,
 
     if (count_disponiveis == 0) {
         free(indices_disponiveis);
+        // Se não houver perguntas disponíveis para a dificuldade atual, tentar a próxima dificuldade
+        // Isso evita um loop infinito se uma dificuldade específica não tiver perguntas suficientes
         return NULL;
     }
 
@@ -61,7 +63,7 @@ Pergunta *obter_pergunta_por_dificuldade(Pergunta *perguntas, int num_perguntas,
 
 // constante para as dificuldaddes dos jogos
 const char *dificuldades_jogo[] = {
-    "muito fácill", "muito fácil",
+    "muito fácil", "muito fácil",
     "fácil", "fácil",
     "médio", "médio", "médio", "médio",
     "difícil", "difícil", "difícil", "difícil",
@@ -173,8 +175,8 @@ void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *
             if (*pergunta_atual_idx < 15) {
                 *pergunta_atual_ptr = obter_pergunta_por_dificuldade(todas_perguntas, total_perguntas, dificuldades_jogo[*pergunta_atual_idx], perguntas_usadas_indices);
                 if (*pergunta_atual_ptr == NULL) {
-                    printf("Erro: Não foi possível carregar a próxima pergunta.\n");
-                    *tela_atual = END; //caso de erro, ele vai para a tela final
+                    printf("Não há mais perguntas disponíveis para a dificuldade atual. Fim de jogo.\n");
+                    *tela_atual = END; // Avança para a tela final se não houver mais perguntas
                 }
                 *resposta_jogador = ' ';
                 *resposta_enviada = false;

@@ -1,18 +1,19 @@
-## Tarefas para implementar a funcionalidade 'Pular'
+## Tarefas para corrigir o problema de carregamento infinito de perguntas
 
-### Fase 2: Implementar funcionalidade de pul- [x] Adicionar variável `skip_count` em `main.c` para controlar os pulos.
-- [x] Inicializar `skip_count` em `Iniciar_jogo`.
-- [x] Modificar `Atualizar_jogo` para:
-    - [x] Detectar o clique no botão \'Pular\'.
-    - [x] Se o botão for clicado e `skip_count` < 3:
-        - [x] Incrementar `skip_count`.
-        - [x] Simular resposta correta para a pergunta atual.
-        - [x] Avançar para a próxima pergunta.
-- [x] Modificar `Escrever_jogo` para:
-    - [x] Desenhar o botão \'Pular\'.
-    - [x] Exibir o número de pulos restantes.
-- [x] Adicionar comentários no código para a nova funcionalidade.
-### Fase 3: Entregar arquivos modificados
-- [ ] Compilar e testar o jogo.
-- [ ] Enviar os arquivos `main.c` modificados para o usuário.
+### Fase 1: Analisar e depurar o código de carregamento de perguntas
+- [x] Revisar `obter_pergunta_por_dificuldade` em `main.c`.
+- [x] Revisar `carregar_perguntas_csv` em `csv_handler.c`.
+- [x] Verificar a lógica de `perguntas_usadas_indices`.
+- [x] Corrigir o erro de digitação em `dificuldades_jogo`
+
+### Fase 2: Implementar a correção
+- [x] Corrigir linhas mal formatadas em `bancoperguntas.csv`
+- [x] Ajustar a lógica em `obter_pergunta_por_dificuldade` e `Atualizar_jogo` para lidar com a falta de perguntas.
+
+### Fase 3: Testar a correção
+- [x] Compilar o código.
+- [ ] Executar o jogo e verificar se o problema foi resolvido. (Não é possível testar diretamente devido à falta de ambiente gráfico)
+
+### Fase 4: Entregar arquivos modificados
+- [ ] Enviar os arquivos `main.c`, `pergunta.c`, `csv_handler.c` e `Makefile` modificados para o usuário.
 
