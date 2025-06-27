@@ -22,11 +22,10 @@ endif
 SRC=./*.c
 
 all:
-	gcc $(SRC) -g -lm $(EXTRA_FLAGS) $(INCLUDE) -o $(BIN)
+	gcc $(SRC) -g -lm $(EXTRA_FLAGS) $(INCLUDE) $(shell pkg-config --cflags --libs raylib) -o $(BIN)
 
 run:
 	$(BIN)
-
 debug:
 	gdb $(BIN)
 

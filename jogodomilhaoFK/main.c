@@ -106,7 +106,7 @@ void Escrever_texto(Font font, const char *texto, Rectangle rec, float fontSize,
 }
 
 // funcao para iniciar o jogo
-void Iniciar_jogo(Pergunta **todas_perguntas_ptr, int *total_perguntas_ptr, int *perguntas_respondidas_count_ptr, int *pontuacao_atual_ptr, int *pontuacao_garantida_ptr, int *pergunta_atual_idx_ptr, char *resposta_jogador_ptr, bool *resposta_enviada_ptr, bool *resposta_certa_ptr, Pergunta **pergunta_atual_ptr, int **perguntas_usadas_indices_ptr) {
+void Iniciar_jogo(Pergunta **todas_perguntas_ptr, int *total_perguntas_ptr, int *perguntas_respondidas_count_ptr, int *pontuacao_atual_ptr, int *pontuacao_garantida_ptr, int *pergunta_atual_idx_ptr, char *resposta_jogador_ptr, bool *resposta_enviada_ptr, bool *resposta_certa_ptr, Pergunta **pergunta_atual_ptr, int **perguntas_usadas_indices_ptr, int *skip_count_ptr) {
     *perguntas_respondidas_count_ptr = 0;
     *pontuacao_atual_ptr = 0;
     *pontuacao_garantida_ptr = 0; // varial usada para resetar a pontuação
@@ -114,6 +114,7 @@ void Iniciar_jogo(Pergunta **todas_perguntas_ptr, int *total_perguntas_ptr, int 
     *resposta_jogador_ptr = ' ';
     *resposta_enviada_ptr = false;
     *resposta_certa_ptr = false;
+    *skip_count_ptr = 0; // Inicializa o contador de pulos
 
     if (*perguntas_usadas_indices_ptr != NULL) {
         free(*perguntas_usadas_indices_ptr);
@@ -129,7 +130,16 @@ void Iniciar_jogo(Pergunta **todas_perguntas_ptr, int *total_perguntas_ptr, int 
 }
 
 // funcao para atualizar 
-void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *pergunta_atual_idx, int *pontuacao_atual, int *pontuacao_garantida, char *resposta_jogador, bool *resposta_enviada, bool *resposta_certa, Pergunta *todas_perguntas, int total_perguntas, int *perguntas_usadas_indices, Sound sfx_correct, Sound sfx_wrong) {
+void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *pergunta_atual_idx, int *pontuacao_atual, int *pontuacao_garantida, char *resposta_jogador, bool *resposta_enviada, bool *resposta_certa, Pergunta *todas_perguntas, int total_perguntas, int *perguntas_usadas_indices, Sound sfx_correct, Sound sfx_wrong, int *contador_pulo) {
+    // Lógica para o botão Pular
+    Rectangle botao_pular = { SCREEN_WIDTH - 200, 250, 150, 50 };
+    if (CheckCollisionPointRec(GetMousePosition(), botao_pular) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && *contador_pulo < 3) {
+        (*contador_pulo)++;
+        *resposta_certa = true; // Simula resposta correta
+        *resposta_enviada = true;
+        PlaySound(sfx_correct);
+    }
+
     // para ver qual tecla o jogador fez 
     if (IsKeyPressed(KEY_A)) *resposta_jogador = 'A';
     if (IsKeyPressed(KEY_B)) *resposta_jogador = 'B';
@@ -183,7 +193,7 @@ void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *
 }
 
 // essa funcao foi feita para escrever no jogo
-void Escrever_jogo(Pergunta *pergunta_atual, int pontuacao_atual, int pontuacao_garantida, int pergunta_atual_idx, bool resposta_enviada, bool resposta_certa) {
+void Escrever_jogo(Pergunta *pergunta_atual, int pontuacao_atual, int pontuacao_garantida, int pergunta_atual_idx, bool resposta_enviada, bool resposta_certa, int conta_pulo) {
     
     ClearBackground(RAYWHITE);
 
@@ -215,6 +225,13 @@ void Escrever_jogo(Pergunta *pergunta_atual, int pontuacao_atual, int pontuacao_
     } else {
         DrawText("Carregando perguntas...", SCREEN_WIDTH/2 - MeasureText("Carregando perguntas...", 25)/2, SCREEN_HEIGHT/2, 25, BLACK);
     }
+
+    // Desenha o botão Pular
+    Rectangle botao_pular = { SCREEN_WIDTH - 200, 250, 150, 50 };
+    DrawRectangleRec(botao_pular, (conta_pulo < 3) ? BLUE : GRAY);
+    DrawText("Pular", botao_pular.x + 45, botao_pular.y + 15, 20, WHITE);
+    DrawText(TextFormat("Pulos restantes: %d", 3 - conta_pulo), SCREEN_WIDTH - 250, 320, 20, BLACK);
+
     // funcao para escrever a premiação, pontuação e as perguntas na tela
     DrawText(TextFormat("Premiação: R$ %d", pontuacao_atual), 100, SCREEN_HEIGHT - 100, 25, DARKGRAY);
     DrawText(TextFormat("Pontuação Garantida: R$ %d", pontuacao_garantida), 100, SCREEN_HEIGHT - 70, 25, DARKGREEN);
@@ -238,8 +255,9 @@ int main() {
 
     Pergunta *pergunta_atual = NULL;
     char resposta_jogador = ' ';
-bool resposta_enviada = false;
-bool resposta_certa = false;
+    bool resposta_enviada = false;
+    bool resposta_certa = false;
+    int conta_pulo = 0;
 
     // Carregar texturas das imagens de fundo
     Texture2D teladefundo_menu = LoadTexture("teladefundo_menu.png");
@@ -281,7 +299,7 @@ bool resposta_certa = false;
                        
                     } else {
                         StopMusicStream(music_menu);
-                        Iniciar_jogo(&todas_perguntas, &total_perguntas, &perguntas_respondidas_count, &pontuacao_atual, &pontuacao_garantida, &pergunta_atual_idx, &resposta_jogador, &resposta_enviada, &resposta_certa, &pergunta_atual, &perguntas_usadas_indices);
+                        Iniciar_jogo(&todas_perguntas, &total_perguntas, &perguntas_respondidas_count, &pontuacao_atual, &pontuacao_garantida, &pergunta_atual_idx, &resposta_jogador, &resposta_enviada, &resposta_certa, &pergunta_atual, &perguntas_usadas_indices, &conta_pulo);
                         tela_atual = GAMEPLAY;
                     }
                 }
@@ -298,13 +316,13 @@ bool resposta_certa = false;
             } break;
 
             case GAMEPLAY: {
-                Atualizar_jogo(&tela_atual, &pergunta_atual, &pergunta_atual_idx, &pontuacao_atual, &pontuacao_garantida, &resposta_jogador, &resposta_enviada, &resposta_certa, todas_perguntas, total_perguntas, perguntas_usadas_indices, sfx_correct, sfx_wrong);
+                Atualizar_jogo(&tela_atual, &pergunta_atual, &pergunta_atual_idx, &pontuacao_atual, &pontuacao_garantida, &resposta_jogador, &resposta_enviada, &resposta_certa, todas_perguntas, total_perguntas, perguntas_usadas_indices, sfx_correct, sfx_wrong, &conta_pulo);
                 BeginDrawing();
 
                 DrawTexture(teladefundo_gameplay, 0, 0, WHITE); // Desenha a imagem de fundo do gameplay
                 // ClearBackground(RAYWHITE); // Removido para usar a imagem de fundo
 
-                Escrever_jogo(pergunta_atual, pontuacao_atual, pontuacao_garantida, pergunta_atual_idx, resposta_enviada, resposta_certa);
+                Escrever_jogo(pergunta_atual, pontuacao_atual, pontuacao_garantida, pergunta_atual_idx, resposta_enviada, resposta_certa, conta_pulo);
                 EndDrawing();
             } break;
 
