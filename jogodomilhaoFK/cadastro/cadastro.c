@@ -14,7 +14,7 @@ int main() {
     Pergunta *perguntas = NULL;
     int num_perguntas = 0;
     int capacidade_perguntas = 0;
-    char nome_arquivo_csv[] = "bancoperguntas.csv";
+    char nome_arquivo_csv[] = "bancoperguntas.csv";//variave
 
     // Carregar perguntas existentes ao iniciar
     carregar_perguntas_csv(nome_arquivo_csv, &perguntas, &num_perguntas, &capacidade_perguntas);
