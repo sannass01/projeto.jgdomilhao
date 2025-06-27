@@ -61,7 +61,7 @@ Pergunta *obter_pergunta_por_dificuldade(Pergunta *perguntas, int num_perguntas,
 
 // constante para as dificuldaddes dos jogos
 const char *dificuldades_jogo[] = {
-    "muito fácil", "muito fácil",
+    "muito fácill", "muito fácil",
     "fácil", "fácil",
     "médio", "médio", "médio", "médio",
     "difícil", "difícil", "difícil", "difícil",
