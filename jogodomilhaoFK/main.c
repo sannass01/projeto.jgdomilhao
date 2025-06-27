@@ -340,7 +340,7 @@ int main() {
                 
                 //botao de voltar para o menu inicial
                 Rectangle botao_voltar_menu = { SCREEN_WIDTH/2 - 150, 900, 300, 70 };
-                DrawRectangleRec(botao_voltar_menu, LIGHTGRAY);
+                DrawRectangleRec(botao_voltar_menu, RED);
                 DrawText("Voltar ao Menu", botao_voltar_menu.x + 30, botao_voltar_menu.y + 20, 30, BLACK);
                 if (CheckCollisionPointRec(GetMousePosition(), botao_voltar_menu) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                     tela_atual = MENU;
