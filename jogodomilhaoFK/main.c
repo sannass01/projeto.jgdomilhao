@@ -129,7 +129,7 @@ void Iniciar_jogo(Pergunta **todas_perguntas_ptr, int *total_perguntas_ptr, int 
 }
 
 // funcao para atualizar 
-void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *pergunta_atual_idx, int *pontuacao_atual, int *pontuacao_garantida, char *resposta_jogador, bool *resposta_enviada, bool *resposta_certa, Pergunta *todas_perguntas, int total_perguntas, int *perguntas_usadas_indices) {
+void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *pergunta_atual_idx, int *pontuacao_atual, int *pontuacao_garantida, char *resposta_jogador, bool *resposta_enviada, bool *resposta_certa, Pergunta *todas_perguntas, int total_perguntas, int *perguntas_usadas_indices, Sound sfx_correct, Sound sfx_wrong) {
     // para ver qual tecla o jogador fez 
     if (IsKeyPressed(KEY_A)) *resposta_jogador = 'A';
     if (IsKeyPressed(KEY_B)) *resposta_jogador = 'B';
@@ -142,6 +142,7 @@ void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *
         if (*resposta_jogador == (*pergunta_atual_ptr)->letra_correta) {
             *resposta_certa = true;
             *pontuacao_atual = valores_perguntas[*pergunta_atual_idx];
+            PlaySound(sfx_correct);
 
             // paramentros para a segurança do codigo
             if (*pergunta_atual_idx == 4) { // pergunta 5 (tamanho 4)
@@ -152,6 +153,7 @@ void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *
 
         } else {
             *resposta_certa = false;
+            PlaySound(sfx_wrong);
         }
     }
 
@@ -222,6 +224,7 @@ void Escrever_jogo(Pergunta *pergunta_atual, int pontuacao_atual, int pontuacao_
 int main() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Jogo do Milhão");
     SetTargetFPS(60);
+    InitAudioDevice();
 
     Pergunta *todas_perguntas = NULL;
     int total_perguntas = 0;
@@ -243,13 +246,23 @@ bool resposta_certa = false;
     Texture2D teladefundo_gameplay = LoadTexture("teladefundo_gameplay.png");
     Texture2D teladefundo_end = LoadTexture("teladefundo_end.png");
 
+    // Carregar sons
+    Sound sfx_correct = LoadSound("correct_answer.ogg");
+    Sound sfx_wrong = LoadSound("wrong_answer.ogg");
+    Music music_menu = LoadMusicStream("Watch_Dogs_Main_Menu_Theme.ogg");
+
     carregar_perguntas_csv("bancoperguntas.csv", &todas_perguntas, &total_perguntas, &capacidade_perguntas);
 
     GameScreen tela_atual = MENU;
 
     while (!WindowShouldClose()) {
+        UpdateMusicStream(music_menu);
+
         switch (tela_atual) {
             case MENU: {
+                if (!IsMusicStreamPlaying(music_menu)) {
+                    PlayMusicStream(music_menu);
+                }
                 BeginDrawing();
 
                 DrawTexture(teladefundo_menu, 0, 0, WHITE); // Desenha a imagem de fundo do menu
@@ -267,6 +280,7 @@ bool resposta_certa = false;
                         printf("Não há perguntas suficientes para iniciar o jogo. São necessárias 15 perguntas.\n");
                        
                     } else {
+                        StopMusicStream(music_menu);
                         Iniciar_jogo(&todas_perguntas, &total_perguntas, &perguntas_respondidas_count, &pontuacao_atual, &pontuacao_garantida, &pergunta_atual_idx, &resposta_jogador, &resposta_enviada, &resposta_certa, &pergunta_atual, &perguntas_usadas_indices);
                         tela_atual = GAMEPLAY;
                     }
@@ -284,7 +298,7 @@ bool resposta_certa = false;
             } break;
 
             case GAMEPLAY: {
-                Atualizar_jogo(&tela_atual, &pergunta_atual, &pergunta_atual_idx, &pontuacao_atual, &pontuacao_garantida, &resposta_jogador, &resposta_enviada, &resposta_certa, todas_perguntas, total_perguntas, perguntas_usadas_indices);
+                Atualizar_jogo(&tela_atual, &pergunta_atual, &pergunta_atual_idx, &pontuacao_atual, &pontuacao_garantida, &resposta_jogador, &resposta_enviada, &resposta_certa, todas_perguntas, total_perguntas, perguntas_usadas_indices, sfx_correct, sfx_wrong);
                 BeginDrawing();
 
                 DrawTexture(teladefundo_gameplay, 0, 0, WHITE); // Desenha a imagem de fundo do gameplay
@@ -322,6 +336,10 @@ bool resposta_certa = false;
     UnloadTexture(teladefundo_menu);
     UnloadTexture(teladefundo_gameplay);
     UnloadTexture(teladefundo_end);
+    UnloadSound(sfx_correct);
+    UnloadSound(sfx_wrong);
+    UnloadMusicStream(music_menu);
+    CloseAudioDevice();
 
     free(todas_perguntas);
     if (perguntas_usadas_indices != NULL) {
