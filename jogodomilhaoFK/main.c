@@ -7,8 +7,8 @@
 #include "pergunta.h"
 #include "csv_handler.h"
 
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
+#define LARGURA_TELA 1920
+#define ALTURA_TELA 1080
 
 // os estados do jogo
 typedef enum GameScreen {
@@ -134,7 +134,7 @@ void Iniciar_jogo(Pergunta **todas_perguntas_ptr, int *total_perguntas_ptr, int 
 // funcao para atualizar 
 void Atualizar_jogo(GameScreen *tela_atual, Pergunta **pergunta_atual_ptr, int *pergunta_atual_idx, int *pontuacao_atual, int *pontuacao_garantida, char *resposta_jogador, bool *resposta_enviada, bool *resposta_certa, Pergunta *todas_perguntas, int total_perguntas, int *perguntas_usadas_indices, Sound sfx_correct, Sound sfx_wrong, int *contador_pulo) {
     // Lógica para o botão Pular
-    Rectangle botao_pular = { SCREEN_WIDTH - 200, 250, 150, 50 };
+    Rectangle botao_pular = { LARGURA_TELA - 200, 250, 150, 50 };
     if (CheckCollisionPointRec(GetMousePosition(), botao_pular) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && *contador_pulo < 3) {
         (*contador_pulo)++;
         *resposta_certa = true; // Simula resposta correta
@@ -201,7 +201,7 @@ void Escrever_jogo(Pergunta *pergunta_atual, int pontuacao_atual, int pontuacao_
 
     if (pergunta_atual != NULL) {
         //usado para definir area do enunciado
-        Rectangle enunciadoRec = { 100, 100, SCREEN_WIDTH - 200, 200 }; // x = largura //  altura = y
+        Rectangle enunciadoRec = { 100, 100, LARGURA_TELA - 200, 200 }; // x = largura //  altura = y
         int tamanho_fonte = 25;
         int espacamento = 2; // a separação entre as linhas
 
@@ -225,23 +225,23 @@ void Escrever_jogo(Pergunta *pergunta_atual, int pontuacao_atual, int pontuacao_
             }
         }
     } else {
-        DrawText("Carregando perguntas...", SCREEN_WIDTH/2 - MeasureText("Carregando perguntas...", 25)/2, SCREEN_HEIGHT/2, 25, BLACK);
+        DrawText("Carregando perguntas...", LARGURA_TELA/2 - MeasureText("Carregando perguntas...", 25)/2, ALTURA_TELA/2, 25, BLACK);
     }
 
     // Desenha o botão Pular
-    Rectangle botao_pular = { SCREEN_WIDTH - 200, 250, 150, 50 };
+    Rectangle botao_pular = { LARGURA_TELA - 200, 250, 150, 50 };
     DrawRectangleRec(botao_pular, (conta_pulo < 3) ? BLUE : GRAY);
     DrawText("Pular", botao_pular.x + 45, botao_pular.y + 15, 20, WHITE);
-    DrawText(TextFormat("Pulos restantes: %d", 3 - conta_pulo), SCREEN_WIDTH - 250, 320, 20, BLACK);
+    DrawText(TextFormat("Pulos restantes: %d", 3 - conta_pulo), LARGURA_TELA - 250, 320, 20, BLACK);
 
     // funcao para escrever a premiação, pontuação e as perguntas na tela
-    DrawText(TextFormat("Premiação: R$ %d", pontuacao_atual), 100, SCREEN_HEIGHT - 100, 25, DARKGRAY);
-    DrawText(TextFormat("Pontuação Garantida: R$ %d", pontuacao_garantida), 100, SCREEN_HEIGHT - 70, 25, DARKGREEN);
-    DrawText(TextFormat("Pergunta %d de 15", pergunta_atual_idx + 1), SCREEN_WIDTH - 300, SCREEN_HEIGHT - 100, 25, DARKGRAY);
+    DrawText(TextFormat("Premiação: R$ %d", pontuacao_atual), 100, ALTURA_TELA - 100, 25, DARKGRAY);
+    DrawText(TextFormat("Pontuação Garantida: R$ %d", pontuacao_garantida), 100, ALTURA_TELA - 70, 25, DARKGREEN);
+    DrawText(TextFormat("Pergunta %d de 15", pergunta_atual_idx + 1), LARGURA_TELA - 300, ALTURA_TELA - 100, 25, DARKGRAY);
 }
 
 int main() {
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Jogo do Milhão");
+    InitWindow(LARGURA_TELA, ALTURA_TELA, "Jogo do Milhão");
     SetTargetFPS(60);
     InitAudioDevice();
 
@@ -289,10 +289,10 @@ int main() {
                 // ClearBackground(RAYWHITE); // Removido para usar a imagem de fundo
 
                 ClearBackground(RAYWHITE);
-                DrawText("JOGO DO MILHÃO", SCREEN_WIDTH/2 - MeasureText("JOGO DO MILHÃO", 60)/2, 130, 60, YELLOW);
+                DrawText("JOGO DO MILHÃO", LARGURA_TELA/2 - MeasureText("JOGO DO MILHÃO", 60)/2, 130, 60, YELLOW);
                 
                 // botão para iniciar o jogo
-                Rectangle botao_start = { SCREEN_WIDTH/2 - 150, 400, 300, 70 };
+                Rectangle botao_start = { LARGURA_TELA/2 - 150, 400, 300, 70 };
                 DrawRectangleRec(botao_start, YELLOW);
                 DrawText("Iniciar Jogo", botao_start.x + 50, botao_start.y + 20, 30, BLACK);
                 if (CheckCollisionPointRec(GetMousePosition(), botao_start) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -307,7 +307,7 @@ int main() {
                 }
 
                 // o botão de sair do jogo
-                Rectangle botao_saida = { SCREEN_WIDTH/2 - 150, 500, 300, 70 };
+                Rectangle botao_saida = { LARGURA_TELA/2 - 150, 500, 300, 70 };
                 DrawRectangleRec(botao_saida, YELLOW);
                 DrawText("Sair", botao_saida.x + 110, botao_saida.y + 20, 30, BLACK);
                 if (CheckCollisionPointRec(GetMousePosition(), botao_saida) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -335,11 +335,11 @@ int main() {
                 // ClearBackground(RAYWHITE); // Removido para usar a imagem de fundo
 
                 ClearBackground(RAYWHITE);
-                DrawText("FIM DE JOGO!", SCREEN_WIDTH/2 - MeasureText("FIM DE JOGO!", 60)/2, 200, 60, RED);
-                DrawText(TextFormat("Sua Premiação final: R$ %d", pontuacao_atual), SCREEN_WIDTH/2 - MeasureText(TextFormat("Sua pontuação final: R$ %d", pontuacao_atual), 30)/2, 300, 30, RED);
+                DrawText("FIM DE JOGO!", LARGURA_TELA/2 - MeasureText("FIM DE JOGO!", 60)/2, 200, 60, RED);
+                DrawText(TextFormat("Sua Premiação final: R$ %d", pontuacao_atual), LARGURA_TELA/2 - MeasureText(TextFormat("Sua pontuação final: R$ %d", pontuacao_atual), 30)/2, 300, 30, RED);
                 
                 //botao de voltar para o menu inicial
-                Rectangle botao_voltar_menu = { SCREEN_WIDTH/2 - 150, 900, 300, 70 };
+                Rectangle botao_voltar_menu = { LARGURA_TELA/2 - 150, 900, 300, 70 };
                 DrawRectangleRec(botao_voltar_menu, RED);
                 DrawText("Voltar ao Menu", botao_voltar_menu.x + 30, botao_voltar_menu.y + 20, 30, BLACK);
                 if (CheckCollisionPointRec(GetMousePosition(), botao_voltar_menu) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
