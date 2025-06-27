@@ -330,7 +330,7 @@ bool resposta_certa = false;
             } break;
             default: break;
         }
-    }
+    }//while
 
     // Descarregar texturas ao fechar a janela
     UnloadTexture(teladefundo_menu);
